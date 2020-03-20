@@ -1,0 +1,24 @@
+<launch>
+	<node name="simulation" pkg="uwsim" type="uwsim" output="screen" required="true" args="--dataPath $(find sim_link) --configfile $(find sim_link)/data/scenes/science_museum.xml --debugPhysics" />
+	<node name="robot2simulation" pkg="sim_link" type="robot2simulation">
+		<remap from="robot2simulation/thrusters_visual_out" to="/uwsim/joint_state_command" />
+		<remap from="robot2simulation/thrusters_cmd_out" to="/g500/thrusters_cmd" />
+	</node>
+	<node name="swimmer_serial" pkg="sim_link" type="arduino_interface.py" respawn="true" output="screen" args="/dev/ttyACM0">
+		<remap from="/motors" to="/robot2simulation/flipper_cmd" />
+		<remap from="/imu" to="/g500/imu" />
+		<remap from="/pressure" to="/g500/pressure" />
+		<remap from="/leftsensor" to="/g500/leftReceiver" />
+		<remap from="/rightsensor" to="/g500/rightReceiver" />
+	</node>
+	<node name="topicRedirect" pkg="cherezova_sarg_podgainoi" type="topicRedirect"></node>
+	
+	<arg name = "kp" default="1"/>
+	<arg name = "ki" default="0"/>
+	<arg name = "kd" default="0"/>
+
+	<arg name = "save_directory" default="/home/ubuntu/catkin_ws/bags/" />
+	<arg name = "filename" default="ucat_depthControlPID_19Mar2020_kp$(arg kp)_ki$(arg ki)_kd$(arg kd)" />
+
+	<node pkg="rosbag" type="record" name="record" output="screen" args="-b 1024 /depth_error -O $(arg save_directory)$(arg filename)"/> 
+</launch>
